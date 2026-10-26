@@ -1,6 +1,6 @@
 #  Proyek Analisis Data: Bike Sharing Dataset
 
-Proyek analisis data untuk mengeksplorasi faktor lingkungan, cuaca, dan pola waktu yang memengaruhi peminjaman sepeda publik, dilengkapi dengan dashboard interaktif berbasis Streamlit.
+Proyek analisis data untuk mengeksplorasi faktor lingkungan, cuaca, dan pola waktu yang memengaruhi peminjaman sepeda publik, dilengkapi dengan dashboard interaktif berbasis Streamlit. Projek ini menjadi tahap akhir dari kelas Belajar Fundamental Analisa Data yang di laksanakan oleh Dicoding sebagai bentuk Submission untuk tugas akhir. Data yang digunakan bersumber dari Kelas tersebut. 
 
 ---
 

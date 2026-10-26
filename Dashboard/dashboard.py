@@ -1,101 +1,168 @@
+```python
+import os
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Atur konfigurasi layout halaman
-st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
+# Konfigurasi Halaman
+st.set_page_config(
+    page_title="Bike Sharing Insights Dashboard",
+    page_icon="🚲",
+    layout="wide"
+)
 
-# 1. Load data yang sudah bersih
+# Custom CSS untuk mempercantik kartu metrik & container
+st.markdown("""
+    <style>
+    .metric-card {
+        background-color: #F8F9FA;
+        border-radius: 10px;
+        padding: 15px 20px;
+        border-left: 5px solid #1E88E5;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .metric-title { font-size: 14px; color: #6C757D; margin-bottom: 5px; font-weight: 500; }
+    .metric-value { font-size: 26px; color: #212529; font-weight: 700; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 1. Load Data dengan path fleksibel
 @st.cache_data
 def load_data():
-    df = pd.read_csv('Dashboard/main_data.csv')
+    current_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_dir, 'main_data.csv')
+    df = pd.read_csv(file_path)
     df['dteday'] = pd.to_datetime(df['dteday'])
     return df
 
 df = load_data()
 
-# 2. Sidebar Filter Rentang Tanggal
-min_date = df['dteday'].min().date()
-max_date = df['dteday'].max().date()
-
+# 2. Sidebar Filter
 with st.sidebar:
-    st.title("Filter Data")
+    st.image("https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+    st.title("⚙️ Filter Analisis")
+    
+    min_date = df['dteday'].min().date()
+    max_date = df['dteday'].max().date()
+    
     date_range = st.date_input(
-        label="Pilih Rentang Waktu",
+        label="Rentang Waktu:",
         min_value=min_date,
         max_value=max_date,
         value=[min_date, max_date]
     )
 
-# Filter data berdasarkan input tanggal
+# Filter Dataset
 if len(date_range) == 2:
     start_date, end_date = date_range
     filtered_df = df[(df['dteday'].dt.date >= start_date) & (df['dteday'].dt.date <= end_date)]
 else:
     filtered_df = df
 
-# 3. Header & Kartu Metrik
-st.title("🚲 Bike Sharing Analytics Dashboard")
-st.markdown("Analisis performa peminjaman sepeda harian dan pola jam sibuk.")
+# 3. Header Utama
+st.title("🚲 Bike Sharing Performance Dashboard")
+st.caption("Eksplorasi tren peminjaman sepeda publik, pengaruh kondisi cuaca, serta dinamika komuter harian.")
 
-col1, col2, col3 = st.columns(3)
+st.markdown("<br>", unsafe_allow_html=True)
+
+# 4. Ringkasan Kartu Metrik
+col1, col2, col3, col4 = st.columns(4)
+
 with col1:
-    st.metric("Total Peminjaman", value=f"{filtered_df['cnt'].sum():,}")
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Total Peminjaman</div>
+        <div class="metric-value">{filtered_df['cnt'].sum():,}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col2:
-    st.metric("Pengguna Kasual", value=f"{filtered_df['casual'].sum():,}")
+    st.markdown(f"""
+    <div class="metric-card" style="border-left-color: #43A047;">
+        <div class="metric-title">Pengguna Member (Registered)</div>
+        <div class="metric-value">{filtered_df['registered'].sum():,}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col3:
-    st.metric("Pengguna Terdaftar", value=f"{filtered_df['registered'].sum():,}")
+    st.markdown(f"""
+    <div class="metric-card" style="border-left-color: #FB8C00;">
+        <div class="metric-title">Pengguna Kasual (Casual)</div>
+        <div class="metric-value">{filtered_df['casual'].sum():,}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("---")
+with col4:
+    daily_avg = int(filtered_df.groupby('dteday')['cnt'].sum().mean()) if not filtered_df.empty else 0
+    st.markdown(f"""
+    <div class="metric-card" style="border-left-color: #8E24AA;">
+        <div class="metric-title">Rata-rata Peminjaman/Hari</div>
+        <div class="metric-value">{daily_avg:,}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# 4. Visualisasi Pertanyaan 1 (Pengaruh Musim & Cuaca)
-st.subheader("1. Pengaruh Musim dan Cuaca Terhadap Peminjaman Sepeda")
+st.markdown("<br>", unsafe_allow_html=True)
 
-# Agregasi data harian dari data filtered_df
-daily_agg = filtered_df.groupby(['dteday', 'season', 'weathersit'])['cnt'].sum().reset_index()
+# 5. Navigasi Tab Analisis
+tab1, tab2 = st.tabs(["🌦️ Pengaruh Faktor Lingkungan", "⏰ Pola Jam Sibuk & Hari Kerja"])
 
-fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(16, 6))
+with tab1:
+    st.subheader("Pengaruh Musim dan Kondisi Cuaca")
+    st.info("Visualisasi ini membandingkan rata-rata unit harian yang dipinjam berdasarkan musim dan tingkat keparahan cuaca.")
+    
+    daily_agg = filtered_df.groupby(['dteday', 'season', 'weathersit'])['cnt'].sum().reset_index()
+    
+    col_plot1, col_plot2 = st.columns(2)
+    
+    with col_plot1:
+        fig1, ax1 = plt.subplots(figsize=(7, 4.5))
+        season_order = daily_agg.groupby('season')['cnt'].mean().sort_values(ascending=False).index
+        colors_season = ["#1E88E5", "#90CAF9", "#BBDEFB", "#E3F2FD"]
+        
+        sns.barplot(
+            x='season', y='cnt', data=daily_agg, order=season_order,
+            palette=colors_season, ax=ax1, errorbar=None
+        )
+        ax1.set_title("Rata-rata Peminjaman per Musim", fontsize=12, weight='bold', pad=12)
+        ax1.set_xlabel(None)
+        ax1.set_ylabel("Unit Peminjaman Harian")
+        sns.despine(top=True, right=True)
+        st.pyplot(fig1)
 
-colors_season = ["#72BCD4", "#D3D3D3", "#D3D3D3", "#D3D3D3"]
-season_order = daily_agg.groupby('season')['cnt'].mean().sort_values(ascending=False).index
-sns.barplot(
-    x='season', y='cnt', data=daily_agg, order=season_order,
-    palette=colors_season, ax=ax[0], errorbar=None
-)
-ax[0].set_title('Rata-rata Peminjaman per Musim', fontsize=14, weight='bold')
-ax[0].set_xlabel(None)
-ax[0].set_ylabel('Rata-rata Unit Harian')
+    with col_plot2:
+        fig2, ax2 = plt.subplots(figsize=(7, 4.5))
+        weather_order = daily_agg.groupby('weathersit')['cnt'].mean().sort_values(ascending=False).index
+        colors_weather = ["#43A047", "#A5D6A7", "#E8F5E9"]
+        
+        sns.barplot(
+            x='weathersit', y='cnt', data=daily_agg, order=weather_order,
+            palette=colors_weather, ax=ax2, errorbar=None
+        )
+        ax2.set_title("Rata-rata Peminjaman per Kondisi Cuaca", fontsize=12, weight='bold', pad=12)
+        ax2.set_xlabel(None)
+        ax2.set_ylabel(None)
+        sns.despine(top=True, right=True)
+        st.pyplot(fig2)
 
-colors_weather = ["#72BCD4", "#D3D3D3", "#D3D3D3"]
-weather_order = daily_agg.groupby('weathersit')['cnt'].mean().sort_values(ascending=False).index
-sns.barplot(
-    x='weathersit', y='cnt', data=daily_agg, order=weather_order,
-    palette=colors_weather, ax=ax[1], errorbar=None
-)
-ax[1].set_title('Rata-rata Peminjaman per Cuaca', fontsize=14, weight='bold')
-ax[1].set_xlabel(None)
-ax[1].set_ylabel(None)
-
-st.pyplot(fig)
-
-st.markdown("---")
-
-# 5. Visualisasi Pertanyaan 2 (Pola Jam Sibuk)
-st.subheader("2. Pola Peminjaman per Jam: Hari Kerja vs Hari Libur")
-
-hourly_trend = filtered_df.groupby(['hr', 'workingday'])['cnt'].mean().reset_index()
-hourly_trend['workingday'] = hourly_trend['workingday'].map({1: 'Hari Kerja', 0: 'Hari Libur / Akhir Pekan'})
-
-fig2, ax2 = plt.subplots(figsize=(12, 5))
-sns.lineplot(
-    data=hourly_trend, x='hr', y='cnt', hue='workingday',
-    palette=['#FF6F61', '#1F77B4'], linewidth=2.5, marker='o', ax=ax2
-)
-ax2.set_title('Rata-rata Peminjaman per Jam', fontsize=14, weight='bold')
-ax2.set_xlabel('Jam (00:00 - 23:00)')
-ax2.set_ylabel('Rata-rata Unit')
-ax2.set_xticks(range(0, 24))
-ax2.grid(axis='y', linestyle='--', alpha=0.6)
-
-st.pyplot(fig2)
+with tab2:
+    st.subheader("Dinamika Peminjaman Jam Sibuk (Hari Kerja vs Hari Libur)")
+    st.info("Pola mobilitas komuter menunjukkan 2 puncak aktivitas (rush hour) saat hari kerja dibandingkan pola stabil saat hari libur.")
+    
+    hourly_trend = filtered_df.groupby(['hr', 'workingday'])['cnt'].mean().reset_index()
+    hourly_trend['workingday'] = hourly_trend['workingday'].map({1: 'Hari Kerja (Workingday)', 0: 'Hari Libur / Weekend'})
+    
+    fig3, ax3 = plt.subplots(figsize=(12, 4.5))
+    sns.lineplot(
+        data=hourly_trend, x='hr', y='cnt', hue='workingday',
+        palette=['#E53935', '#1E88E5'], linewidth=2.5, marker='o', ax=ax3
+    )
+    ax3.set_title("Rata-rata Volume Sepeda per Jam", fontsize=12, weight='bold', pad=12)
+    ax3.set_xlabel("Jam (00:00 - 23:00)")
+    ax3.set_ylabel("Rata-rata Unit")
+    ax3.set_xticks(range(0, 24))
+    ax3.grid(axis='y', linestyle='--', alpha=0.5)
+    sns.despine(top=True, right=True)
+    ax3.legend(title=None, frameon=True)
+    
+    st.pyplot(fig3)
