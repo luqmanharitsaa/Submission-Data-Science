@@ -11,10 +11,10 @@ Proyek analisis data untuk mempelajari faktor cuaca, musim, dan jam sibuk yang m
 
 ```text
 submission/
-├── dashboard/
+├── Dashboard/
 │   ├── dashboard.py         # Skrip dashboard Streamlit
-│   └── main_data.csv        # Data bersih siap pakai
-├── data/
+│   └── main_data.csv        # Data bersih siap pakai yang dihasilkan dari notebook.ipnyb
+├── Data/
 │   ├── day.csv              # Data harian mentah
 │   └── hour.csv             # Data per jam mentah
 ├── notebook.ipynb           # Notebook analisis data

@@ -1,1 +1,1 @@
-https://penyewaan-sepeda.streamlit.app/
+https://statistik-penyewaan-sepeda.streamlit.app/

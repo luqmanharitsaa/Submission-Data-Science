@@ -117,7 +117,9 @@ with tab1:
     with col_plot1:
         fig1, ax1 = plt.subplots(figsize=(7, 4.5))
         season_order = daily_agg.groupby('season')['cnt'].mean().sort_values(ascending=False).index
-        colors_season = ["#1E88E5", "#90CAF9", "#BBDEFB", "#E3F2FD"]
+        
+        # Palet biru kontras (dari navy pekat sampai biru medium, tidak ada warna pucat)
+        colors_season = ["#0D47A1", "#1976D2", "#2196F3", "#64B5F6"]
         
         sns.barplot(
             x='season', y='cnt', data=daily_agg, order=season_order,
@@ -132,7 +134,9 @@ with tab1:
     with col_plot2:
         fig2, ax2 = plt.subplots(figsize=(7, 4.5))
         weather_order = daily_agg.groupby('weathersit')['cnt'].mean().sort_values(ascending=False).index
-        colors_weather = ["#43A047", "#A5D6A7", "#E8F5E9"]
+        
+        # Palet hijau tegas (4 variasi warna kontras untuk 4 kondisi cuaca)
+        colors_weather = ["#1B5E20", "#2E7D32", "#388E3C", "#66BB6A"]
         
         sns.barplot(
             x='weathersit', y='cnt', data=daily_agg, order=weather_order,
